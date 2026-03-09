@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Safe Steps</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Tensorflow + OCR -->
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.15.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+<style>
+
+/* GLOBAL */
+
+*{
+box-sizing:border-box;
+margin:0;
+padding:0;
+}
+
+body{
+font-family:Segoe UI;
+background:#f4f6f8;
+text-align:center;
+}
+
+.app-header{
+background:#0b3c5d;
+color:white;
+padding:20px;
+}
+
+.card{
+background:white;
+max-width:700px;
+margin:25px auto;
+padding:25px;
+border-radius:15px;
+box-shadow:0 10px 25px rgba(0,0,0,0.1);
+}
+
+.feature-btn{
+display:block;
+padding:18px;
+margin:12px 0;
+border-radius:10px;
+background:#eef3f7;
+text-decoration:none;
+color:#0b3c5d;
+font-size:18px;
+cursor:pointer;
+}
+
+.big-btn{
+width:100%;
+padding:15px;
+margin-top:15px;
+font-size:18px;
+border:none;
+border-radius:10px;
+background:#0b3c5d;
+color:white;
+cursor:pointer;
+}
+
+input,textarea{
+width:100%;
+padding:12px;
+margin-top:10px;
+border-radius:8px;
+border:1px solid #ccc;
+font-size:16px;
+}
+
+video,canvas{
+width:100%;
+border-radius:10px;
+margin-top:10px;
+}
+
+.page{
+display:none;
+}
+
+.active{
+display:block;
+}
+
+.sos-btn{
+position:fixed;
+bottom:20px;
+right:20px;
+width:80px;
+height:80px;
+border-radius:50%;
+background:#c62828;
+color:white;
+font-size:20px;
+border:none;
+}
+
+</style>
+</head>
+
+<body>
+
+<header class="app-header">
+<h1>Safe Steps</h1>
+<p>Assistive Navigation System</p>
+</header>
+
+<!-- LOGIN PAGE -->
+
+<div id="loginPage" class="card page active">
+
+<h2>Login</h2>
+
+<input id="loginUser" placeholder="Email">
+
+<input type="password" id="loginPass" placeholder="Password">
+
+<button class="big-btn" onclick="loginUser()">Login</button>
+
+<p style="margin-top:10px">
+Don't have account?
+<a onclick="showPage('registerPage')">Register</a>
+</p>
+
+<p id="error"></p>
+
+</div>
+
+<!-- REGISTER -->
+
+<div id="registerPage" class="card page">
+
+<h2>Register</h2>
+
+<input id="name" placeholder="Name">
+
+<input id="email" placeholder="Email">
+
+<input id="password" type="password" placeholder="Password">
+
+<button class="big-btn" onclick="registerUser()">Register</button>
+
+<p style="margin-top:10px">
+<a onclick="showPage('loginPage')">Back to Login</a>
+</p>
+
+</div>
+
+<!-- HOME -->
+
+<div id="homePage" class="card page">
+
+<button class="feature-btn" onclick="showPage('livePage')">Live Object Detection</button>
+
+<button class="feature-btn" onclick="showPage('navPage')">Navigation</button>
+
+<button class="feature-btn" onclick="showPage('readPage')">Document Reader</button>
+
+<button class="feature-btn" onclick="startVoiceCommand()">Voice Control</button>
+
+<button class="feature-btn" onclick="showPage('settingsPage')">Settings</button>
+
+</div>
+
+<!-- LIVE DETECTION -->
+
+<div id="livePage" class="card page">
+
+<h2>Live Detection</h2>
+
+<video id="video" autoplay></video>
+<canvas id="canvas"></canvas>
+
+<button class="big-btn" onclick="describeScene()">Describe Scene</button>
+<button class="big-btn" onclick="showPage('homePage')">Back</button>
+
+</div>
+
+<!-- NAVIGATION -->
+
+<div id="navPage" class="card page">
+
+<h2>Navigation</h2>
+
+<input id="destination" placeholder="Destination">
+
+<button class="big-btn" onclick="startTextNavigation()">Start Navigation</button>
+
+<button class="big-btn" onclick="startNavigation()">Speak Destination</button>
+
+<button class="big-btn" onclick="showPage('homePage')">Back</button>
+
+</div>
+
+<!-- OCR -->
+
+<div id="readPage" class="card page">
+
+<h2>Document Reader</h2>
+
+<input type="file" id="imageInput">
+
+<textarea id="outputText"></textarea>
+
+<button class="big-btn" onclick="showPage('homePage')">Back</button>
+
+</div>
+
+<!-- SETTINGS -->
+
+<div id="settingsPage" class="card page">
+
+<h2>Settings</h2>
+
+<input id="contactPhone" placeholder="Emergency Phone">
+
+<label>
+<input type="checkbox" id="darkMode">
+Dark Mode
+</label>
+
+<button class="big-btn" onclick="saveSettings()">Save</button>
+
+<button class="big-btn" onclick="showPage('homePage')">Back</button>
+
+</div>
+
+<button class="sos-btn" onclick="sendSOS()">SOS</button>
+
+<script>
+
+/* PAGE NAVIGATION */
+
+function showPage(page){
+
+document.querySelectorAll(".page").forEach(p=>{
+p.classList.remove("active")
+})
+
+document.getElementById(page).classList.add("active")
+
+}
+
+/* LOGIN */
+
+function loginUser(){
+
+const email=document.getElementById("loginUser").value
+const pass=document.getElementById("loginPass").value
+
+const user=JSON.parse(localStorage.getItem("user"))
+
+if(user && email===user.email && pass===user.password){
+
+showPage("homePage")
+
+}else{
+
+document.getElementById("error").innerText="Invalid login"
+
+}
+
+}
+
+/* REGISTER */
+
+function registerUser(){
+
+const name=document.getElementById("name").value
+const email=document.getElementById("email").value
+const pass=document.getElementById("password").value
+
+localStorage.setItem("user",JSON.stringify({
+name:name,
+email:email,
+password:pass
+}))
+
+alert("Registered")
+
+showPage("loginPage")
+
+}
+
+/* VOICE CONTROL */
+
+const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition
+const recognition=new SpeechRecognition()
+
+function speak(text){
+
+speechSynthesis.cancel()
+
+const msg=new SpeechSynthesisUtterance(text)
+
+msg.lang="en-IN"
+
+speechSynthesis.speak(msg)
+
+}
+
+function startVoiceCommand(){
+
+recognition.start()
+
+speak("Listening")
+
+}
+
+recognition.onresult=(event)=>{
+
+const command=event.results[0][0].transcript.toLowerCase()
+
+if(command.includes("live")) showPage("livePage")
+
+else if(command.includes("read")) showPage("readPage")
+
+else if(command.includes("navigation")) showPage("navPage")
+
+}
+
+/* CAMERA + OBJECT DETECTION */
+
+const video=document.getElementById("video")
+const canvas=document.getElementById("canvas")
+const ctx=canvas.getContext("2d")
+
+async function startCamera(){
+
+const stream=await navigator.mediaDevices.getUserMedia({video:true})
+
+video.srcObject=stream
+
+}
+
+let model
+
+async function loadModel(){
+
+model=await cocoSsd.load()
+
+detectObjects()
+
+}
+
+async function detectObjects(){
+
+if(!model) return
+
+const predictions=await model.detect(video)
+
+canvas.width=video.videoWidth
+canvas.height=video.videoHeight
+
+ctx.clearRect(0,0,canvas.width,canvas.height)
+
+predictions.forEach(p=>{
+
+if(p.score>0.6){
+
+const [x,y,w,h]=p.bbox
+
+ctx.strokeStyle="red"
+
+ctx.strokeRect(x,y,w,h)
+
+ctx.fillText(p.class,x,y)
+
+}
+
+})
+
+requestAnimationFrame(detectObjects)
+
+}
+
+async function describeScene(){
+
+const predictions=await model.detect(video)
+
+const objects=predictions.map(p=>p.class).join(", ")
+
+speak("I see "+objects)
+
+}
+
+startCamera()
+
+loadModel()
+
+/* NAVIGATION */
+
+function startTextNavigation(){
+
+const dest=document.getElementById("destination").value
+
+navigator.geolocation.getCurrentPosition(pos=>{
+
+const lat=pos.coords.latitude
+const lon=pos.coords.longitude
+
+window.open(
+`https://www.google.com/maps/dir/?api=1&origin=${lat},${lon}&destination=${dest}&travelmode=walking`
+)
+
+})
+
+}
+
+function startNavigation(){
+
+recognition.start()
+
+speak("Say destination")
+
+recognition.onresult=(event)=>{
+
+const dest=event.results[0][0].transcript
+
+document.getElementById("destination").value=dest
+
+startTextNavigation()
+
+}
+
+}
+
+/* OCR */
+
+document.getElementById("imageInput").addEventListener("change",(e)=>{
+
+const file=e.target.files[0]
+
+Tesseract.recognize(file,"eng")
+
+.then(res=>{
+
+const text=res.data.text
+
+document.getElementById("outputText").value=text
+
+speak(text)
+
+})
+
+})
+
+/* SOS */
+
+function sendSOS(){
+
+const phone=localStorage.getItem("contactPhone")||"9999999999"
+
+window.open(`https://wa.me/${phone}?text=Emergency Help`)
+
+speak("SOS sent")
+
+}
+
+/* SETTINGS */
+
+function saveSettings(){
+
+const phone=document.getElementById("contactPhone").value
+
+localStorage.setItem("contactPhone",phone)
+
+if(document.getElementById("darkMode").checked){
+
+document.body.style.background="#111"
+document.body.style.color="white"
+
+}
+
+alert("Settings saved")
+
+}
+
+</script>
+
+</body>
+</html>
