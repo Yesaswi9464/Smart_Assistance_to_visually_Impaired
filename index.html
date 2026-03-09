@@ -5,10 +5,6 @@
 <title>Safe Steps</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-
 <style>
 
 *{
@@ -19,100 +15,81 @@ font-family:Segoe UI, Arial;
 }
 
 body{
-background:#e9ecef;
+background:#dfe3e7;
 text-align:center;
 }
 
+/* HEADER */
+
 header{
-background:#133f5c;
+background:#154563;
 color:white;
-padding:30px;
+padding:40px 20px;
 }
 
 header h1{
-font-size:32px;
+font-size:34px;
 }
 
 header p{
 opacity:0.9;
-margin-top:5px;
+margin-top:8px;
 }
+
+/* MAIN CARD */
 
 .card{
-background:white;
-max-width:550px;
-margin:35px auto;
-padding:25px;
-border-radius:18px;
-box-shadow:0 10px 35px rgba(0,0,0,0.15);
+background:#f5f7f9;
+max-width:520px;
+margin:40px auto;
+padding:30px;
+border-radius:20px;
+box-shadow:0 12px 35px rgba(0,0,0,0.15);
 }
 
+/* FEATURE BOXES */
+
 .feature{
-background:#f3f5f7;
-border-radius:14px;
+background:#f0f3f6;
+border-radius:12px;
 padding:18px;
-margin:15px 0;
+margin-bottom:18px;
 text-align:left;
+border:1px solid #d9dee4;
 cursor:pointer;
+transition:0.2s;
+}
+
+.feature:hover{
+background:#e7edf2;
 }
 
 .feature h3{
-color:#133f5c;
+color:#1d3f5a;
+font-size:20px;
+margin-bottom:4px;
 }
 
 .feature p{
-color:#666;
 font-size:14px;
+color:#666;
 }
 
-button{
+/* BUTTON */
+
+.voice-btn{
 width:100%;
 padding:16px;
-margin-top:15px;
 border:none;
 border-radius:12px;
-font-size:18px;
+background:#174463;
 color:white;
+font-size:18px;
 cursor:pointer;
-background:linear-gradient(135deg,#0b3c5d,#1fa2a6);
+margin-top:10px;
 }
 
-.back{
-background:linear-gradient(135deg,#607d8b,#90a4ae);
-}
-
-input,textarea{
-width:100%;
-padding:15px;
-margin-top:12px;
-border-radius:10px;
-border:1px solid #ccc;
-font-size:16px;
-}
-
-textarea{
-height:160px;
-}
-
-video,canvas{
-width:100%;
-border-radius:14px;
-margin-top:12px;
-}
-
-.page{
-display:none;
-}
-
-.active{
-display:block;
-}
-
-.row{
-display:flex;
-gap:15px;
-margin-top:15px;
-}
+/* SOS */
 
 .sos{
 position:fixed;
@@ -122,10 +99,11 @@ width:90px;
 height:90px;
 border-radius:50%;
 background:#d32f2f;
-font-size:20px;
 color:white;
+font-size:22px;
 border:none;
-box-shadow:0 8px 20px rgba(211,47,47,0.6);
+box-shadow:0 10px 25px rgba(211,47,47,0.6);
+cursor:pointer;
 }
 
 </style>
@@ -138,215 +116,33 @@ box-shadow:0 8px 20px rgba(211,47,47,0.6);
 <p>Assistive walking & navigation system</p>
 </header>
 
-<div id="home" class="card page active">
+<div class="card">
 
-<div class="feature" onclick="showPage('live')">
+<div class="feature">
 <h3>Live Object Detection</h3>
 <p>Real-time environment awareness</p>
 </div>
 
-<div class="feature" onclick="showPage('nav')">
+<div class="feature">
 <h3>Navigation Aid</h3>
 <p>Voice-guided safe routes</p>
 </div>
 
-<div class="feature" onclick="showPage('reader')">
+<div class="feature">
 <h3>Document Reader</h3>
 <p>OCR with audio output</p>
 </div>
 
-<div class="feature" onclick="showPage('assistant')">
+<div class="feature">
 <h3>AI Assistant</h3>
 <p>Ask questions by voice</p>
 </div>
 
-<button onclick="startVoice()">🎤 Voice Control</button>
+<button class="voice-btn">🎤 Voice Control</button>
 
 </div>
 
-<div id="live" class="card page">
-
-<h2>Live Safety View</h2>
-<p>AI vision for safe walking</p>
-
-<div class="row">
-<video id="video" autoplay muted></video>
-<canvas id="canvas"></canvas>
-</div>
-
-<button onclick="describeScene()">📸 Describe Scene</button>
-
-<button class="back" onclick="showPage('home')">← Back</button>
-
-</div>
-
-<div id="nav" class="card page">
-
-<h2>Voice Navigation</h2>
-<p>Tell your destination to start walking</p>
-
-<button onclick="voiceNav()">🎤 Say Destination</button>
-
-<input id="destination" placeholder="Type destination here">
-
-<button onclick="startNav()">📍 Start Navigation</button>
-
-<button class="back" onclick="showPage('home')">← Back</button>
-
-</div>
-
-<div id="reader" class="card page">
-
-<h2>Document Reader</h2>
-<p>Scan printed text and listen to it</p>
-
-<input type="file" id="imageInput">
-
-<textarea id="ocrText"></textarea>
-
-<button class="back" onclick="showPage('home')">← Back</button>
-
-</div>
-
-<div id="assistant" class="card page">
-
-<h2>AI Assistant</h2>
-<p>Ask questions by typing or speaking</p>
-
-<textarea id="chatBox"></textarea>
-
-<input id="userMsg" placeholder="Type your message">
-
-<button onclick="sendMessage()">📩 Send Message</button>
-
-<button onclick="startVoiceAssistant()">🎤 Speak</button>
-
-<button class="back" onclick="showPage('home')">← Back</button>
-
-</div>
-
-<button class="sos" onclick="sendSOS()">SOS</button>
-
-<script>
-
-function showPage(p){
-document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"))
-document.getElementById(p).classList.add("active")
-}
-
-function speak(text){
-speechSynthesis.cancel()
-speechSynthesis.speak(new SpeechSynthesisUtterance(text))
-}
-
-const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
-const recognition = new SpeechRecognition()
-
-function startVoice(){
-speak("Listening")
-recognition.start()
-}
-
-recognition.onresult=(e)=>{
-const cmd=e.results[0][0].transcript.toLowerCase()
-if(cmd.includes("live")) showPage("live")
-else if(cmd.includes("navigation")) showPage("nav")
-else if(cmd.includes("reader")) showPage("reader")
-else if(cmd.includes("assistant")) showPage("assistant")
-}
-
-const video=document.getElementById("video")
-const canvas=document.getElementById("canvas")
-const ctx=canvas.getContext("2d")
-
-let model
-
-async function startCamera(){
-const stream=await navigator.mediaDevices.getUserMedia({video:true})
-video.srcObject=stream
-}
-
-async function loadModel(){
-model=await cocoSsd.load()
-detect()
-}
-
-async function detect(){
-const predictions=await model.detect(video)
-
-canvas.width=video.videoWidth
-canvas.height=video.videoHeight
-
-ctx.clearRect(0,0,canvas.width,canvas.height)
-
-predictions.forEach(p=>{
-if(p.score>0.6){
-const [x,y,w,h]=p.bbox
-ctx.strokeStyle="#00ffcc"
-ctx.strokeRect(x,y,w,h)
-ctx.fillText(p.class,x,y)
-}
-})
-
-requestAnimationFrame(detect)
-}
-
-function describeScene(){
-model.detect(video).then(p=>{
-let objs=p.map(o=>o.class).join(", ")
-speak("I see "+objs)
-})
-}
-
-startCamera()
-loadModel()
-
-function startNav(){
-navigator.geolocation.getCurrentPosition(pos=>{
-const lat=pos.coords.latitude
-const lon=pos.coords.longitude
-const dest=destination.value
-
-window.open(`https://www.google.com/maps/dir/?api=1&origin=${lat},${lon}&destination=${dest}&travelmode=walking`)
-})
-}
-
-function voiceNav(){
-recognition.start()
-recognition.onresult=(e)=>{
-destination.value=e.results[0][0].transcript
-startNav()
-}
-}
-
-imageInput.addEventListener("change",(e)=>{
-const file=e.target.files[0]
-
-Tesseract.recognize(file,"eng").then(res=>{
-ocrText.value=res.data.text
-speak(res.data.text)
-})
-})
-
-function sendMessage(){
-const msg=userMsg.value
-chatBox.value+="\nYou: "+msg
-
-let reply="I don't know yet."
-
-if(msg.includes("ai"))
-reply="Artificial Intelligence enables machines to learn and solve problems."
-
-chatBox.value+="\nBot: "+reply
-speak(reply)
-}
-
-function sendSOS(){
-window.open("https://wa.me/919999999999?text=Emergency Help Needed")
-speak("Emergency message sent")
-}
-
-</script>
+<button class="sos">SOS</button>
 
 </body>
 </html>
